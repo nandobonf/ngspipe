@@ -2,13 +2,13 @@
 
 # create ngspipe conda environment
 # tools installed: gatk bbmap samtools bwa openjdk fastqc multiqc picard libiconv r-gplots r-kernsmooth
-
+# conda
 
 conda activate ngspipe
 
 # set input files
 $1=/mnt/jbod/common/xNando/Run_Wei/ICP65_S14_L001_R1_001.fastq.gz # R1
-$2=/mnt/jbod/common/xNando/Run_Wei/ICP65_S14_L001_R2_001.fastq.gz # R1
+$2=/mnt/jbod/common/xNando/Run_Wei/ICP65_S14_L001_R2_001.fastq.gz # R2
 $3=ICP65                                                          # sample name
 $4=16                                                             # threads / cores
 
