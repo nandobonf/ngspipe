@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# create ngspipe conda environment
 # tools installed: gatk bbmap samtools bwa openjdk fastqc multiqc picard libiconv r-gplots r-kernsmooth
 
 
