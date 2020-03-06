@@ -11,7 +11,7 @@ FQ1=/mnt/jbod/common/xNando/Run_Wei/ICP65_S14_L001_R1_001.fastq.gz # R1
 FQ2=/mnt/jbod/common/xNando/Run_Wei/ICP65_S14_L001_R2_001.fastq.gz # R2
 NAME=ICP65                                                         # sample name
 NT=16                                                              # threads / cores
-SUBSEQ=false
+SUBSEQ=false                                                       # subsample 10% of the reads (only for testing)
 
 
 # REEFERENCES
