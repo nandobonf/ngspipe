@@ -1,125 +1,151 @@
 #!/bin/bash
 
-# create ngspipe conda environment
-# tools installed: gatk bbmap samtools bwa openjdk fastqc multiqc picard libiconv r-gplots r-kernsmooth
-# conda
 
+# 20200324 - meeting. Step 1 validation outputs: coverage and variant called with old and new bam files
+
+# # if miniconda or conda is not installed, install it with:
+# wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+# bash Miniconda3-latest-Linux-x86_64.sh
+# conda config --add channels defaults
+# conda config --add channels bioconda
+# conda config --add channels conda-forge
+# # create a conda environment with all the needed tools (NB gatk version 3)
+# conda create -n ngspipe gatk bbmap samtools bwa openjdk fastqc multiqc picard libiconv r-gplots r-kernsmooth qualimap fastp seqtk parallel -y
+# # register gatk version
+# conda activate ngspipe
+# gatk3-register /mnt/jbod/common/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef.tar.bz2
+# # remove parallel citation message
+# parallel --citation
+# conda deactivate
+
+# usage:
+#~/bin/ngspipeline_v01_FB.sh /mnt/jbod/common/xNando/Run_Wei/ICP65_S14_L001_R1_001.fastq.gz /mnt/jbod/common/xNando/Run_Wei/ICP65_S14_L001_R2_001.fastq.gz ICP65
+
+FQ1=$1
+FQ2=$2
+FQ=$3
+
+echo $1 is FASTQ1
+echo $2 is FASTQ2
+echo $3 is SAMPLE NAME
+
+# # ONLY FOR TESTING
+# FQ1=/mnt/jbod/common/xNando/Run_Wei/ICP65_S14_L001_R1_001.fastq.gz
+# FQ2=/mnt/jbod/common/xNando/Run_Wei/ICP65_S14_L001_R2_001.fastq.gz
+# FQ=ICP65
+
+###########
+## START ##
+###########
+source ~/miniconda3/etc/profile.d/conda.sh
 conda activate ngspipe
-
-# set input files
-FQ1=/mnt/jbod/common/xNando/Run_Wei/ICP65_S14_L001_R1_001.fastq.gz # R1
-FQ2=/mnt/jbod/common/xNando/Run_Wei/ICP65_S14_L001_R2_001.fastq.gz # R2
-NAME=ICP65                                                         # sample name
-NT=16                                                              # threads / cores
-SUBSEQ=false                                                       # subsample 10% of the reads (only for testing)
-
+SUBSEQ=false
+NT=8 # set N threads
 
 # REEFERENCES
-BWAGENOME=/mnt/jbod/nando/Homo_sapiens/UCSC/hg19/Sequence/BWAIndex/genome.fa
-FASTAGENOME=/mnt/jbod/nando/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/genome.fa
-KNOWN1=/mnt/jbod/nando/Homo_sapiens/GATK/hg19/dbsnp_138.hg19.vcf.gz
-KNOWN2=/mnt/jbod/nando/Homo_sapiens/GATK/hg19/1000G_phase1.indels.hg19.sites.vcf.gz
-KNOWN3=/mnt/jbod/nando/Homo_sapiens/GATK/hg19/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf.gz
-FEATUREFILE=/home/ferdy/2020_ngs_design.bed
+BWAGENOME=/mnt/jbod/common/Homo_sapiens/UCSC/hg19/Sequence/BWAIndex/genome.fa
+FASTAGENOME=/mnt/jbod/common/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/genome.fa
+KNOWN1=/mnt/jbod/common/Homo_sapiens/GATK/hg19/dbsnp_138.hg19.vcf.gz
+KNOWN2=/mnt/jbod/common/Homo_sapiens/GATK/hg19/1000G_phase1.indels.hg19.sites.vcf.gz
+KNOWN3=/mnt/jbod/common/Homo_sapiens/GATK/hg19/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf.gz
+FEATUREFILE=/mnt/jbod/common/Homo_sapiens/2020_ngs_design.bed
 
-mkdir -p $NAME
-cd $NAME
+mkdir -p $FQ
+cd $FQ
 
 mkdir -p qc
 
 # clumpify sort and speed up with compression
-clumpify.sh in=$FQ1 in2=$FQ2 out=01.$NAME.R1.fq.gz out2=01.$NAME.R2.fq.gz reorder=p dedupe=f -Xmx8g  # set dedupe=t if willing to deduplicate, but why?
+clumpify.sh in=$FQ1 in2=$FQ2 out=01.$FQ.R1.fq.gz out2=01.$FQ.R2.fq.gz reorder=p dedupe=f -Xmx8g 
 
 mkdir -p qc/01qc
-fastqc -t $NT -o qc/01qc 01.$NAME.R1.fq.gz 01.$NAME.R2.fq.gz
+fastqc -t $NT -o qc/01qc 01.$FQ.R1.fq.gz 01.$FQ.R2.fq.gz
 multiqc -f -n 00.pre.trimming -o qc/ qc/01qc/
 
 # remove low quality reads
 if [ SUBSEQ = true ]; then
   echo "Subseq is active"
   # subseq
-  seqtk sample -s100 01.$NAME.R1.fq.gz 0.1 | pigz -p $NT > 01.$NAME.R1.sub.fq.gz
-  seqtk sample -s100 01.$NAME.R2.fq.gz 0.1 | pigz -p $NT > 01.$NAME.R2.sub.fq.gz
+  seqtk sample -s100 01.$FQ.R1.fq.gz 0.1 | pigz -p $NT > 01.$FQ.R1.sub.fq.gz
+  seqtk sample -s100 01.$FQ.R2.fq.gz 0.1 | pigz -p $NT > 01.$FQ.R2.sub.fq.gz
   
   fastp \
-  --in1 01.$NAME.R1.sub.fq.gz \
-  --in2 01.$NAME.R2.sub.fq.gz \
+  --in1 01.$FQ.R1.sub.fq.gz \
+  --in2 01.$FQ.R2.sub.fq.gz \
   --cut_front \
   --cut_tail \
   --thread $NT \
   --detect_adapter_for_pe \
-  --out1 02.$NAME.R1.fq.gz \
-  --out2 02.$NAME.R2.fq.gz \
-  --json qc/trim.$NAME.fastp.json \
-  --html qc/trim.$NAME.fastp.html > qc/$NAME.fastp.out 2>&1
+  --out1 02.$FQ.R1.fq.gz \
+  --out2 02.$FQ.R2.fq.gz \
+  --json qc/trim.$FQ.fastp.json \
+  --html qc/trim.$FQ.fastp.html > qc/$FQ.fastp.out 2>&1
 
   else
   echo "Subseq not active"
 
   fastp \
-  --in1 01.$NAME.R1.fq.gz \
-  --in2 01.$NAME.R2.fq.gz \
+  --in1 01.$FQ.R1.fq.gz \
+  --in2 01.$FQ.R2.fq.gz \
   --cut_front \
   --cut_tail \
   --thread $NT \
   --detect_adapter_for_pe \
-  --out1 02.$NAME.R1.fq.gz \
-  --out2 02.$NAME.R2.fq.gz \
-  --json qc/trim.$NAME.fastp.json \
-  --html qc/trim.$NAME.fastp.html > qc/$NAME.fastp.out 2>&1
+  --out1 02.$FQ.R1.fq.gz \
+  --out2 02.$FQ.R2.fq.gz \
+  --json qc/trim.$FQ.fastp.json \
+  --html qc/trim.$FQ.fastp.html > qc/$FQ.fastp.out 2>&1
 
 fi
 
 
 multiqc -m fastp -f -n 01.post.trimming.fastp -o qc/ qc/*fastp.json
-rm 01.$NAME* qc/trim.$NAME.fastp.*
-
+rm 01.$FQ* qc/trim.$FQ.fastp.*
 
 
 # align with BWA MEM
-bwa mem -t $NT -R @RG\\tID:$NAME\\tSM:$NAME\\tPL:ILLUMINA\\tLB:$NAME $BWAGENOME 02.$NAME.R1.fq.gz 02.$NAME.R2.fq.gz | samtools sort -@ $NT -O BAM -o 03.$NAME.bam -
-rm 01.$NAME* 02.$NAME*
+bwa mem -t $NT -R @RG\\tID:$FQ\\tSM:$FQ\\tPL:ILLUMINA\\tLB:$FQ $BWAGENOME 02.$FQ.R1.fq.gz 02.$FQ.R2.fq.gz | samtools sort -@ $NT -O BAM -o 03.$FQ.bam -
+rm 02.$FQ*
 
 # mark DUPS
 picard MarkDuplicates \
-I=03.$NAME.bam \
-O=04.$NAME.marked.bam \
-M=qc/$NAME.sorted.picard.metrics \
+I=03.$FQ.bam \
+O=04.$FQ.marked.bam \
+M=qc/$FQ.sorted.picard.metrics \
 REMOVE_DUPLICATES=false \
 CREATE_INDEX=true \
 VALIDATION_STRINGENCY=LENIENT \
 TMP_DIR=./
 
-rm 03.$NAME.bam
+rm 03.$FQ.bam
 
-multiqc -m picard -f -n 02.picard.markdups -o qc/ qc/$NAME.sorted.picard.metrics
-rm qc/$NAME.sorted.picard.metrics
+multiqc -m picard -f -n 02.picard.markdups -o qc/ qc/$FQ.sorted.picard.metrics
+rm qc/$FQ.sorted.picard.metrics
 
 # realign around indels
 parallel -j $NT "
-# generate chromosome interval
-gatk3 -T RealignerTargetCreator -R $FASTAGENOME -I 04.$NAME.marked.bam -o $NAME.chr{}.intervals -L chr{}
-# local realignment
-gatk3 -T IndelRealigner -R $FASTAGENOME -I 04.$NAME.marked.bam -targetIntervals $NAME.chr{}.intervals -L chr{} -o $NAME.chr{}.realigned.bam
+	# generate chromosome interval
+	gatk3 -T RealignerTargetCreator -R $FASTAGENOME -I 04.$FQ.marked.bam -o $FQ.chr{}.intervals -L chr{}
+	# local realignment
+	gatk3 -T IndelRealigner -R $FASTAGENOME -I 04.$FQ.marked.bam -targetIntervals $FQ.chr{}.intervals -L chr{} -o $FQ.chr{}.realigned.bam
 " ::: {1..22} X Y M
 
 # concatenate realigned reads and unmapped ones
-samtools cat $NAME.chr*.realigned.bam | samtools sort -@$NT > 05.$NAME.realigned.bam
-samtools index -@$NT 05.$NAME.realigned.bam
-rm $NAME.chr*.realigned.ba* $NAME.chr*.intervals 04.$NAME* $NAME.recal_data.table
+samtools cat $FQ.chr*.realigned.bam | samtools sort -@$NT > 05.$FQ.realigned.bam
+samtools index -@$NT 05.$FQ.realigned.bam
+rm $FQ.chr*.realigned.ba* $FQ.chr*.intervals 04.$FQ* $FQ.recal_data.table
 
 
-# recalibrate reads NB: add other -knownSites for additional vcfs
-
+# recalibrate reads 
 gatk3 \
 -nct $NT \
 -T BaseRecalibrator \
 -R $FASTAGENOME \
--I 05.$NAME.realigned.bam \
+-I 05.$FQ.realigned.bam \
 -knownSites $KNOWN1 \
 -knownSites $KNOWN2 \
 -knownSites $KNOWN3 \
--o $NAME.recal_data.table
+-o $FQ.recal_data.table
 
 
 # apply recalibration
@@ -127,18 +153,17 @@ gatk3 \
 -nct $NT \
 -T PrintReads \
 -R $FASTAGENOME \
--I 05.$NAME.realigned.bam \
--BQSR $NAME.recal_data.table \
--o $NAME.final.bam
+-I 05.$FQ.realigned.bam \
+-BQSR $FQ.recal_data.table \
+-o $FQ.final.bam
 
 
-rm $NAME.recal_data.table 05.$NAME.realigned.bam
-
+rm $FQ.recal_data.table 05.$FQ.realigned.bam
 
 # quality control final bam
 
 qualimap bamqc \
--bam $NAME.final.bam \
+-bam $FQ.final.bam \
 --feature-file $FEATUREFILE \
 -nt $NT \
 -sd \
@@ -146,8 +171,11 @@ qualimap bamqc \
 -outformat PDF:HTML
 
 multiqc -m qualimap -f -n 03.bamqc.report.final -o qc/ qc/raw_data_qualimapReport/ qc/genome_results.txt
-rm -r qc/$NAME.sorted.picard.metrics qc/trim.$NAME*
+rm -r qc/$FQ.sorted.picard.metrics qc/trim.$FQ*
 
-#######################
-## END
-#######################
+cd ..
+conda deactivate
+
+#########
+## END ##
+#########
