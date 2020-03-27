@@ -40,7 +40,7 @@ echo -e "\e[33m[NGSPIPE] SAMPLE NAME is $FQ \e[39m"
 echo -e "\e[33m[NGSPIPE] Activating conda environment \e[39m"
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate ngspipe
-SUBSEQ=false
+SUBSEQ="true"
 NT=8 # set N threads
 
 # REEFERENCES
@@ -67,8 +67,8 @@ multiqc -f -n 00.pre.trimming -o qc/ qc/01qc/ > /dev/null 2>&1
 
 # remove low quality reads
 echo -e "\e[33m[NGSPIPE] Trimming and filtering reads \e[39m"
-if [ SUBSEQ = true ]; then
-  echo "Subseq is active"
+if [ "$SUBSEQ" = true ]; then
+  echo "[NGSPIPE] Subseq is active, only 10% of reads will be used"
   # subseq
   seqtk sample -s100 01.$FQ.R1.fq.gz 0.1 | pigz -p $NT > 01.$FQ.R1.sub.fq.gz
   seqtk sample -s100 01.$FQ.R2.fq.gz 0.1 | pigz -p $NT > 01.$FQ.R2.sub.fq.gz
@@ -86,7 +86,7 @@ if [ SUBSEQ = true ]; then
   --html qc/trim.$FQ.fastp.html > qc/$FQ.fastp.out 2>&1
 
   else
-  echo "Subseq not active"
+  echo "[NGSPIPE] Subseq is not active, 100% of reads will be used"
 
   fastp \
   --in1 01.$FQ.R1.fq.gz \
@@ -99,10 +99,9 @@ if [ SUBSEQ = true ]; then
   --out2 02.$FQ.R2.fq.gz \
   --json qc/trim.$FQ.fastp.json \
   --html qc/trim.$FQ.fastp.html > qc/$FQ.fastp.out 2>&1
-
 fi
 
-
+echo -e "\e[33m[NGSPIPE] Post-filtering QC \e[39m"
 multiqc -m fastp -f -n 01.post.trimming.fastp -o qc/ qc/*fastp.json
 rm 01.$FQ* qc/trim.$FQ.fastp.*
 
