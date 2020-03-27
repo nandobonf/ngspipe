@@ -25,9 +25,9 @@ FQ1=$1
 FQ2=$2
 FQ=$3
 
-echo $1 is FASTQ1
-echo $2 is FASTQ2
-echo $3 is SAMPLE NAME
+echo -e "\e[33m[NGSPIPE] FASTQ1 is $FQ1 \e[39m"
+echo -e "\e[33m[NGSPIPE] FASTQ2 is $FQ2 \e[39m"
+echo -e "\e[33m[NGSPIPE] SAMPLE NAME is $FQ \e[39m"
 
 # # ONLY FOR TESTING
 # FQ1=/mnt/jbod/common/xNando/Run_Wei/ICP65_S14_L001_R1_001.fastq.gz
@@ -37,6 +37,7 @@ echo $3 is SAMPLE NAME
 ###########
 ## START ##
 ###########
+echo -e "\e[33m[NGSPIPE] Activating conda environment \e[39m"
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate ngspipe
 SUBSEQ=false
@@ -56,6 +57,7 @@ cd $FQ
 mkdir -p qc
 
 # clumpify sort and speed up with compression
+echo -e "\e[33m[NGSPIPE] Clumping reads \e[39m"
 clumpify.sh in=$FQ1 in2=$FQ2 out=01.$FQ.R1.fq.gz out2=01.$FQ.R2.fq.gz reorder=p dedupe=f -Xmx8g 
 
 mkdir -p qc/01qc
@@ -63,6 +65,7 @@ fastqc -t $NT -o qc/01qc 01.$FQ.R1.fq.gz 01.$FQ.R2.fq.gz
 multiqc -f -n 00.pre.trimming -o qc/ qc/01qc/
 
 # remove low quality reads
+echo -e "\e[33m[NGSPIPE] Trimming and filtering reads \e[39m"
 if [ SUBSEQ = true ]; then
   echo "Subseq is active"
   # subseq
@@ -104,10 +107,12 @@ rm 01.$FQ* qc/trim.$FQ.fastp.*
 
 
 # align with BWA MEM
+echo -e "\e[33m[NGSPIPE] Aligning reads \e[39m"
 bwa mem -t $NT -R @RG\\tID:$FQ\\tSM:$FQ\\tPL:ILLUMINA\\tLB:$FQ $BWAGENOME 02.$FQ.R1.fq.gz 02.$FQ.R2.fq.gz | samtools sort -@ $NT -O BAM -o 03.$FQ.bam -
 rm 02.$FQ*
 
 # mark DUPS
+echo -e "\e[33m[NGSPIPE] Marking duplicates \e[39m"
 picard MarkDuplicates \
 I=03.$FQ.bam \
 O=04.$FQ.marked.bam \
@@ -123,6 +128,7 @@ multiqc -m picard -f -n 02.picard.markdups -o qc/ qc/$FQ.sorted.picard.metrics
 rm qc/$FQ.sorted.picard.metrics
 
 # realign around indels
+echo -e "\e[33m[NGSPIPE] Realign around indels \e[39m"
 parallel -j $NT "
 	# generate chromosome interval
 	gatk3 -T RealignerTargetCreator -R $FASTAGENOME -I 04.$FQ.marked.bam -o $FQ.chr{}.intervals -L chr{}
@@ -137,6 +143,7 @@ rm $FQ.chr*.realigned.ba* $FQ.chr*.intervals 04.$FQ* $FQ.recal_data.table
 
 
 # recalibrate reads 
+echo -e "\e[33m[NGSPIPE] Recalibrate alignment scores (GATK BQSR) \e[39m"
 gatk3 \
 -nct $NT \
 -T BaseRecalibrator \
@@ -158,10 +165,10 @@ gatk3 \
 -o $FQ.final.bam
 
 
-rm $FQ.recal_data.table 05.$FQ.realigned.bam
+rm $FQ.recal_data.table 05.$FQ.realigned.bam 05.$FQ.realigned.bam.bai
 
 # quality control final bam
-
+echo -e "\e[33m[NGSPIPE] Quality control on final bam \e[39m"
 qualimap bamqc \
 -bam $FQ.final.bam \
 --feature-file $FEATUREFILE \
