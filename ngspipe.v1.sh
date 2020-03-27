@@ -58,11 +58,12 @@ mkdir -p qc
 
 # clumpify sort and speed up with compression
 echo -e "\e[33m[NGSPIPE] Clumping reads \e[39m"
-clumpify.sh in=$FQ1 in2=$FQ2 out=01.$FQ.R1.fq.gz out2=01.$FQ.R2.fq.gz reorder=p dedupe=f -Xmx8g 
+clumpify.sh in=$FQ1 in2=$FQ2 out=01.$FQ.R1.fq.gz out2=01.$FQ.R2.fq.gz reorder=p dedupe=f -Xmx8g > /dev/null 2>&1
 
+echo -e "\e[33m[NGSPIPE] raw reads QC \e[39m"
 mkdir -p qc/01qc
-fastqc -t $NT -o qc/01qc 01.$FQ.R1.fq.gz 01.$FQ.R2.fq.gz
-multiqc -f -n 00.pre.trimming -o qc/ qc/01qc/
+fastqc -t $NT -o qc/01qc 01.$FQ.R1.fq.gz 01.$FQ.R2.fq.gz 
+multiqc -f -n 00.pre.trimming -o qc/ qc/01qc/ > /dev/null 2>&1
 
 # remove low quality reads
 echo -e "\e[33m[NGSPIPE] Trimming and filtering reads \e[39m"
