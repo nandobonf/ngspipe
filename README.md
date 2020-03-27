@@ -1,4 +1,4 @@
-## ngspipe
+# ngspipe
 pipeline for analysis of NGS data. From fastqs to BAM file
 
 
@@ -8,7 +8,7 @@ pipeline for analysis of NGS data. From fastqs to BAM file
 ./ngspipe.v1.sh {FASTQ_R1} {FASTQ_R2} {SAMPLEID}
 ```
 
-##Included steps:
+## Included steps:
 - fastq clumping (to speed up and improve compression)
 - fastqc and multiqc (raw fastq plots and visualization)
 - fastp (adapter trimming and quality filtering)
