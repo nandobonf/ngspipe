@@ -70,9 +70,10 @@ echo -e "\e[33m[NGSPIPE] Trimming and filtering reads \e[39m"
 if [ "$SUBSEQ" = true ]; then
   echo "[NGSPIPE] Subseq is active, only 10% of reads will be used"
   # subseq
+  echo "[NGSPIPE] Subsampling reads"
   seqtk sample -s100 01.$FQ.R1.fq.gz 0.1 | pigz -p $NT > 01.$FQ.R1.sub.fq.gz
   seqtk sample -s100 01.$FQ.R2.fq.gz 0.1 | pigz -p $NT > 01.$FQ.R2.sub.fq.gz
-  
+  echo "[NGSPIPE] Trimming and filtering reads"
   fastp \
   --in1 01.$FQ.R1.sub.fq.gz \
   --in2 01.$FQ.R2.sub.fq.gz \
@@ -87,7 +88,7 @@ if [ "$SUBSEQ" = true ]; then
 
   else
   echo "[NGSPIPE] Subseq is not active, 100% of reads will be used"
-
+  echo "[NGSPIPE] Trimming and filtering reads"
   fastp \
   --in1 01.$FQ.R1.fq.gz \
   --in2 01.$FQ.R2.fq.gz \
@@ -178,7 +179,7 @@ qualimap bamqc \
 -outformat PDF:HTML
 
 multiqc -m qualimap -f -n 03.bamqc.report.final -o qc/ qc/raw_data_qualimapReport/ qc/genome_results.txt
-rm -r qc/$FQ.sorted.picard.metrics qc/trim.$FQ*
+#rm -r qc/$FQ.sorted.picard.metrics qc/trim.$FQ*
 
 cd ..
 conda deactivate
