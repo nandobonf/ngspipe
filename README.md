@@ -27,7 +27,7 @@ conda config --add channels defaults
 conda config --add channels bioconda
 conda config --add channels conda-forge
 # create a conda environment with all the needed tools (NB gatk version 3)
-conda create -n ngspipe gatk bbmap samtools bwa openjdk fastqc multiqc picard libiconv r-gplots r-kernsmooth qualimap fastp seqtk parallel -y
+conda create -n ngspipe gatk bbmap samtools bwa openjdk fastqc multiqc picard fastuniq libiconv r-gplots r-kernsmooth qualimap fastp seqtk parallel -y
 # register gatk version, download from gatk website the file "GenomeAnalysisTK-3.8-1-0-gf15c1c3ef.tar.bz2"
 conda activate ngspipe
 gatk3-register /mnt/jbod/common/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef.tar.bz2
