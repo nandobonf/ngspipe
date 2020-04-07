@@ -148,7 +148,7 @@ rm $FQ.chr*.realigned.ba* $FQ.chr*.intervals 04.$FQ* $FQ.recal_data.table
 
 
 # recalibrate reads 
-echo -e "\e[33m[NGSPIPE] Recalibrate alignment scores (GATK BQSR) \e[39m"
+echo -e "\e[33m[NGSPIPE] Calculating recalibration scores (GATK BQSR) \e[39m"
 gatk3 \
 -nct $NT \
 -T BaseRecalibrator \
@@ -161,6 +161,7 @@ gatk3 \
 
 
 # apply recalibration
+echo -e "\e[33m[NGSPIPE] Recalibrating (GATK BQSR) \e[39m"
 gatk3 \
 -nct $NT \
 -T PrintReads \
