@@ -32,7 +32,7 @@ echo -e "\e[33m[NGSPIPE] SAMPLE NAME is $FQ \e[39m"
 # # ONLY FOR TESTING
 # FQ1=/mnt/jbod/common/xNando/Run_Wei/ICP65_S14_L001_R1_001.fastq.gz
 # FQ2=/mnt/jbod/common/xNando/Run_Wei/ICP65_S14_L001_R2_001.fastq.gz
-# FQ=ICP65
+# FQ=ICP65.GRCh37
 
 ###########
 ## START ##
@@ -131,13 +131,15 @@ multiqc -m picard -f -n 02.picard.markdups -o qc/ qc/$FQ.sorted.picard.metrics
 rm qc/$FQ.sorted.picard.metrics
 
 # realign around indels
+# -maxReads default is 20000
+# add known indels to the model
 echo -e "\e[33m[NGSPIPE] Realign around indels \e[39m"
 parallel -j $NT "
 	# generate chromosome interval
-	gatk3 -T RealignerTargetCreator -R $FASTAGENOME -I 04.$FQ.marked.bam -o $FQ.chr{}.intervals -L chr{}
+	gatk3 -T RealignerTargetCreator -R $FASTAGENOME -I 04.$FQ.marked.bam -o $FQ.chr{}.intervals -L {}
 	# local realignment
-	gatk3 -T IndelRealigner -R $FASTAGENOME -I 04.$FQ.marked.bam -targetIntervals $FQ.chr{}.intervals -L chr{} -o $FQ.chr{}.realigned.bam
-" ::: {1..22} X Y M
+	gatk3 -T IndelRealigner -R $FASTAGENOME -I 04.$FQ.marked.bam -maxReads 50000 -known $KNOWN2 -targetIntervals $FQ.chr{}.intervals -L {} -o $FQ.chr{}.realigned.bam
+" ::: {1..22} X Y MT
 
 # concatenate realigned reads and unmapped ones
 samtools cat $FQ.chr*.realigned.bam | samtools sort -@$NT > 05.$FQ.realigned.bam
