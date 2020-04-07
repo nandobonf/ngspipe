@@ -10,13 +10,14 @@
 # conda config --add channels bioconda
 # conda config --add channels conda-forge
 # # create a conda environment with all the needed tools (NB gatk version 3)
-# conda create -n ngspipe gatk bbmap samtools bwa openjdk fastqc multiqc picard libiconv r-gplots r-kernsmooth qualimap fastp seqtk parallel -y
+# conda create -n ngspipe gatk bbmap samtools bwa openjdk fastqc multiqc picard fastuniq libiconv r-gplots r-kernsmooth qualimap fastp seqtk parallel -y
 # # register gatk version
 # conda activate ngspipe
 # gatk3-register /mnt/jbod/common/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef.tar.bz2
 # # remove parallel citation message
 # parallel --citation
 # conda deactivate
+# # now the environment is ready to go
 
 # usage:
 #~/bin/ngspipeline_v01_FB.sh /mnt/jbod/common/xNando/Run_Wei/ICP65_S14_L001_R1_001.fastq.gz /mnt/jbod/common/xNando/Run_Wei/ICP65_S14_L001_R2_001.fastq.gz ICP65
