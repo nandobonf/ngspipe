@@ -174,18 +174,22 @@ gatk3 \
 
 rm $FQ.recal_data.table 05.$FQ.realigned.bam 05.$FQ.realigned.bam.bai
 
+# fix feature file
+sed 's/chrM/MT/g' $FEATUREFILE > featurefile.bed
+sed -i 's/chr//g' featurefile.bed
+
 # quality control final bam
 echo -e "\e[33m[NGSPIPE] Quality control on final bam \e[39m"
 qualimap bamqc \
 -bam $FQ.final.bam \
---feature-file $FEATUREFILE \
+--feature-file featurefile.bed \
 -nt $NT \
 -sd \
 -outdir qc/ \
 -outformat PDF:HTML
 
 multiqc -m qualimap -f -n 03.bamqc.report.final -o qc/ qc/raw_data_qualimapReport/ qc/genome_results.txt
-#rm -r qc/$FQ.sorted.picard.metrics qc/trim.$FQ*
+rm featurefile.bed
 
 cd ..
 conda deactivate
