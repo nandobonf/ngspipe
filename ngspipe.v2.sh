@@ -169,10 +169,13 @@ gatk3 \
 -R $FASTAGENOME \
 -I 05.$FQ.realigned.bam \
 -BQSR $FQ.recal_data.table \
--o $FQ.final.bam
+-o $FQ.prefinal.bam
 
 
 rm $FQ.recal_data.table 05.$FQ.realigned.bam 05.$FQ.realigned.bam.bai
+samtools sort -@$NT $FQ.prefinal.bam > $FQ.final.bam
+samtools index $FQ.final.bam
+rm $FQ.prefinal.ba*
 
 # fix feature file
 sed 's/chrM/MT/g' $FEATUREFILE > featurefile.bed
