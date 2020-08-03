@@ -16,6 +16,7 @@
 # gatk3-register /mnt/jbod/common/GenomeAnalysisTK-3.8-1-0-gf15c1c3ef.tar.bz2
 # # remove parallel citation message
 # parallel --citation
+# to increase gatk allocated RAM, open the gatk3 wrapper with text edit and increase -Xmx
 # conda deactivate
 # # now the environment is ready to go
 
