@@ -1,5 +1,6 @@
 # ngspipe
-pipeline for analysis of NGS data. From fastqs to BAM file
+pipeline for analysis of NGS data. From fastqs to BAM file.
+Latest version ngspipe.v3.sh implements GATK4. No need to register the software if using conda.
 
 
 ## Usage
@@ -14,7 +15,6 @@ pipeline for analysis of NGS data. From fastqs to BAM file
 - fastp (adapter trimming and quality filtering)
 - bwa-mem mapping to GRCh37 assembly
 - post aligment qc
-- alignment around indels (GATK)
 - base recalibrator (GATK BQSR)
 - final qc on bam file
 
